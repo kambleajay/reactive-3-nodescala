@@ -22,10 +22,10 @@ class NodeScalaSuite extends FunSuite {
   test("A Future should always be created") {
     val always = Future.always(517)
 
-    assert(Await.result(always, 0 nanos) == 517)
+    assert(Await.result(always, 1 nanos) == 517)
   }
 
-  ignore("A Future should never be created") {
+  test("A Future should never be created") {
     val never = Future.never[Int]
 
     try {
