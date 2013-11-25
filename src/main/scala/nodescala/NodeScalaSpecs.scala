@@ -19,6 +19,12 @@ class NodeScalaSpecs extends Properties("NodeScala") {
     throws(classOf[TimeoutException])(Await.result(never, 1 nanos))
   }
 
+  property("given a list of futures, returns a future of list containing all values") = forAll { (xs: List[String]) =>
+    val listOfFutures: List[Future[String]] = xs map (x => Future.always(x))
+    val allInFuture: Future[List[String]] = Future.all(listOfFutures)
+    Await.result(allInFuture, 1 millisecond) == xs
+  }
+
 }
 
 object Checks {

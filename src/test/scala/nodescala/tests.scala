@@ -21,7 +21,6 @@ class NodeScalaSuite extends FunSuite {
 
   test("A Future should always be created") {
     val always = Future.always(517)
-
     assert(Await.result(always, 1 nanos) == 517)
   }
 
@@ -156,7 +155,3 @@ class NodeScalaSuite extends FunSuite {
   }
 
 }
-
-
-
-

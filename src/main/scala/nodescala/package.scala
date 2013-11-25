@@ -1,3 +1,4 @@
+import scala.collection.mutable.ListBuffer
 import scala.language.postfixOps
 import scala.util._
 import scala.util.control.NonFatal
@@ -37,7 +38,7 @@ package object nodescala {
      *  The values in the list are in the same order as corresponding futures `fs`.
      *  If any of the futures `fs` fails, the resulting future also fails.
      */
-    def all[T](fs: List[Future[T]]): Future[List[T]] = ???
+    def all[T](fs: List[Future[T]]): Future[List[T]] = allImpl(fs)
 
     /** Given a list of futures `fs`, returns the future holding the value of the future from `fs` that completed first.
      *  If the first completing future in `fs` fails, then the result is failed as well.
@@ -64,6 +65,16 @@ package object nodescala {
      */
     def run()(f: CancellationToken => Future[Unit]): Subscription = ???
 
+  }
+
+  def allImpl[T](fs: List[Future[T]]): Future[List[T]] = async {
+    var _fs = fs
+    val listOfVals = ListBuffer[T]()
+    while(_fs != Nil) {
+      listOfVals += await { _fs.head }
+      _fs = _fs.tail
+    }
+    listOfVals.result
   }
 
   /** Adds extension methods to future objects.
