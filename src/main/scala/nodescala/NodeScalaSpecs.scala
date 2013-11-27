@@ -2,10 +2,11 @@ package nodescala
 
 import org.scalacheck.{Gen, Properties}
 import org.scalacheck.Prop._
-import scala.concurrent.{Promise, Await, Future}
+import scala.concurrent.{ExecutionContext, Promise, Await, Future}
 import scala.language.postfixOps
 import scala.concurrent.duration._
 import java.util.concurrent.TimeoutException
+import ExecutionContext.Implicits.global
 
 class NodeScalaSpecs extends Properties("NodeScala") {
 
@@ -57,6 +58,14 @@ class NodeScalaSpecs extends Properties("NodeScala") {
   property("now:no") = forAll(dataNowYes) { (x: Int) =>
     val f = Future.delay(Duration(5, MILLISECONDS))
     throws(classOf[NoSuchElementException])(f.now)
+  }
+
+  val continueWithData = Gen.alphaStr
+  property("continueWith") = forAll(continueWithData) { (str: String) =>
+    val f1 = Future.always(str)
+    val f2 = f1.continueWith(f => f.flatMap(s => Future.always(s.length)))
+    val r1 = Await.result(f2, 1 second)
+    Await.result(r1, 1 second) == str.length
   }
 
 }
