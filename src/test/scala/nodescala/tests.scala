@@ -35,7 +35,7 @@ class NodeScalaSuite extends FunSuite {
     }
   }
 
-  ignore("CancellationTokenSource should allow stopping the computation") {
+  test("CancellationTokenSource should allow stopping the computation") {
     val cts = CancellationTokenSource()
     val ct = cts.cancellationToken
     val p = Promise[String]()
@@ -113,7 +113,7 @@ class NodeScalaSuite extends FunSuite {
     }
   }
 
-  ignore("Listener should serve the next request as a future") {
+  test("Listener should serve the next request as a future") {
     val dummy = new DummyListener(8191, "/test")
     val subscription = dummy.start()
 

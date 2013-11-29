@@ -51,8 +51,8 @@ package object nodescala {
       */
     def any[T](fs: List[Future[T]]): Future[T] = {
       val p = Promise[T]
-      for(f <- fs) {
-        f onComplete(p.tryComplete(_))
+      for (f <- fs) {
+        f onComplete (p.tryComplete(_))
       }
       p.future
     }
@@ -73,7 +73,11 @@ package object nodescala {
 
     /** Creates a cancellable context for an execution and runs it.
       */
-    def run()(f: CancellationToken => Future[Unit]): Subscription = ???
+    def run()(f: CancellationToken => Future[Unit]): Subscription = {
+      val ct = CancellationTokenSource()
+      f(ct.cancellationToken)
+      ct
+    }
 
   }
 
@@ -101,7 +105,7 @@ package object nodescala {
       * However, it is also non-deterministic -- it may throw or return a value
       * depending on the current state of the `Future`.
       */
-    def now: T = if(f.isCompleted) Await.result(f, Duration.Zero) else throw new NoSuchElementException
+    def now: T = if (f.isCompleted) Await.result(f, Duration.Zero) else throw new NoSuchElementException
 
     /** Continues the computation of this future by taking the current future
       * and mapping it into another future.
@@ -117,12 +121,18 @@ package object nodescala {
       * The function `cont` is called only after the current future completes.
       * The resulting future contains a value returned by `cont`.
       */
-    def continue[S](cont: Try[T] => S): Future[S] = ???
+    def continue[S](cont: Try[T] => S): Future[S] = continueImpl(f, cont)
 
   }
 
   def continueWithImpl[A, B](f: Future[A], cont: Future[A] => B): Future[B] = async {
-    await {f}; cont(f)
+    await { f }
+    cont(f)
+  }
+
+  def continueImpl[T, S](f: Future[T], cont: Try[T] => S): Future[S] = async {
+    val fresult = await { f }
+    cont(Try { fresult })
   }
 
   /** Subscription objects are used to be able to unsubscribe
@@ -168,7 +178,16 @@ package object nodescala {
   object CancellationTokenSource {
     /** Creates a new `CancellationTokenSource`.
       */
-    def apply(): CancellationTokenSource = ???
+    def apply(): CancellationTokenSource = new CancellationTokenSource {
+      val p = Promise[Unit]()
+      val cancellationToken = new CancellationToken {
+        def isCancelled = p.future.value != None
+      }
+
+      def unsubscribe() {
+        p.trySuccess(())
+      }
+    }
   }
 
 }

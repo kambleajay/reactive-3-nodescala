@@ -2,11 +2,12 @@ package nodescala
 
 import org.scalacheck.{Gen, Properties}
 import org.scalacheck.Prop._
-import scala.concurrent.{ExecutionContext, Promise, Await, Future}
+import scala.concurrent._
 import scala.language.postfixOps
 import scala.concurrent.duration._
-import java.util.concurrent.TimeoutException
+import java.util.concurrent.{TimeUnit, TimeoutException}
 import ExecutionContext.Implicits.global
+import scala.util.{Try, Success}
 
 class NodeScalaSpecs extends Properties("NodeScala") {
 
@@ -66,6 +67,33 @@ class NodeScalaSpecs extends Properties("NodeScala") {
     val f2 = f1.continueWith(f => f.flatMap(s => Future.always(s.length)))
     val r1 = Await.result(f2, 1 second)
     Await.result(r1, 1 second) == str.length
+  }
+
+  val continueData = Gen.alphaStr
+  property("continue") = forAll(continueData) { (str: String) =>
+    val f1 = Future.always(str)
+    val f2: Future[Try[Int]] = f1.continue(t => t.flatMap(s => Success(s.length)))
+    val r1: Try[Int] = Await.result(f2, 1 second)
+    r1.get == str.length
+  }
+
+  val runData = for {
+    x <- Gen.choose(1, 100)
+    time = TimeUnit.MILLISECONDS
+  } yield Duration(x, time)
+  property("run") = forAll(runData) { (dur: Duration) =>
+    val p = Promise[Int]
+    val working = Future.run() { ct =>
+      Future {
+        while (ct.nonCancelled) {
+        }
+        p.success(1)
+      }
+    }
+    Future.delay(dur) onSuccess {
+      case _ => working.unsubscribe()
+    }
+    Await.result(p.future, 1 second) == 1
   }
 
 }
