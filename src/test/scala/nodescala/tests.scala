@@ -90,7 +90,7 @@ class NodeScalaSuite extends FunSuite {
       }
     }
 
-    def emit(req: Request) = {
+    def emit(req: Request): NodeScalaSuite.this.type#DummyExchange = {
       val exchange = new DummyExchange(req)
       if (handler != null) handler(exchange)
       exchange
@@ -107,8 +107,8 @@ class NodeScalaSuite extends FunSuite {
       l
     }
 
-    def emit(relativePath: String, req: Request) = this.synchronized {
-      val l = listeners(relativePath)
+    def emit(relativePath: String, req: Request): NodeScalaSuite.this.type#DummyExchange = this.synchronized {
+      val l: NodeScalaSuite.this.type#DummyListener = listeners(relativePath)
       l.emit(req)
     }
   }
@@ -131,7 +131,7 @@ class NodeScalaSuite extends FunSuite {
     subscription.unsubscribe()
   }
 
-  ignore("Server should serve requests") {
+  test("Server should serve requests") {
     val dummy = new DummyServer(8191)
     val dummySubscription = dummy.start("/testDir") {
       request => for (kv <- request.iterator) yield (kv + "\n").toString
@@ -141,8 +141,8 @@ class NodeScalaSuite extends FunSuite {
     Thread.sleep(500)
 
     def test(req: Request) {
-      val webpage = dummy.emit("/testDir", req)
-      val content = Await.result(webpage.loaded.future, 1 second)
+      val webpage: NodeScalaSuite.this.type#DummyExchange = dummy.emit("/testDir", req)
+      val content: String = Await.result(webpage.loaded.future, 1 second)
       val expected = (for (kv <- req.iterator) yield (kv + "\n").toString).mkString
       assert(content == expected, s"'$content' vs. '$expected'")
     }

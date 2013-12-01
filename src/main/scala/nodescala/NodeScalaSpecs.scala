@@ -57,8 +57,7 @@ class NodeScalaSpecs extends Properties("NodeScala") {
   }
 
   property("now:no") = forAll(dataNowYes) { (x: Int) =>
-    val f = Future.delay(Duration(5, MILLISECONDS))
-    throws(classOf[NoSuchElementException])(f.now)
+    throws(classOf[NoSuchElementException])(Future.never.now)
   }
 
   val continueWithData = Gen.alphaStr

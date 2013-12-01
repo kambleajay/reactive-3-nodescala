@@ -1,3 +1,4 @@
+import java.util.NoSuchElementException
 import scala.collection.mutable.ListBuffer
 import scala.language.postfixOps
 import scala.util._
@@ -97,6 +98,14 @@ package object nodescala {
     */
   implicit class FutureOps[T](val f: Future[T]) extends AnyVal {
 
+    /** Continues the computation of this future by taking the current future
+      * and mapping it into another future.
+      *
+      * The function `cont` is called only after the current future completes.
+      * The resulting future contains a value returned by `cont`.
+      */
+    def continueWith[S](cont: Future[T] => S): Future[S] = continueWithImpl(f, cont)
+
     /** Returns the result of this future if it is completed now.
       * Otherwise, throws a `NoSuchElementException`.
       *
@@ -105,15 +114,16 @@ package object nodescala {
       * However, it is also non-deterministic -- it may throw or return a value
       * depending on the current state of the `Future`.
       */
-    def now: T = if (f.isCompleted) Await.result(f, Duration.Zero) else throw new NoSuchElementException
-
-    /** Continues the computation of this future by taking the current future
-      * and mapping it into another future.
-      *
-      * The function `cont` is called only after the current future completes.
-      * The resulting future contains a value returned by `cont`.
-      */
-    def continueWith[S](cont: Future[T] => S): Future[S] = continueWithImpl(f, cont)
+    def now: T = 
+      try {
+        if (f.isCompleted) {
+          Await.result(f, Duration.Zero)
+        } else {
+          throw new NoSuchElementException("future not completed")
+        }
+      } catch {
+        case x: Throwable => throw new NoSuchElementException
+      }
 
     /** Continues the computation of this future by taking the result
       * of the current future and mapping it into another future.
